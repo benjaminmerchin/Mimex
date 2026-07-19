@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["skill_name", "description", "skill_md", "download_url"],
+  "properties": {
+    "skill_name": { "type": "string", "description": "Kebab-case skill name" },
+    "description": { "type": "string", "description": "One-line summary of the skill" },
+    "skill_md": { "type": "string", "description": "Complete SKILL.md file content ready to drop into an agent's skills directory" },
+    "download_url": { "type": "string", "format": "uri", "description": "Direct link to download the same skill as a .md file" }
+  }
+}

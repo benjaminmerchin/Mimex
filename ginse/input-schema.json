@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "video_url"
+  ],
+  "properties": {
+    "video_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://",
+      "maxLength": 2048,
+      "description": "Direct HTTPS link to a video or audio file (mp4, m4a, mp3, wav, webm), max 100 MB"
+    }
+  }
+}

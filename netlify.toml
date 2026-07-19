@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[dev]
+  targetPort = 5199
+
+[functions]
+  included_files = ["vendor/ffmpeg-linux-x64"]
+
+[functions.process-background]
+  external_node_modules = ["ffmpeg-static"]
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
