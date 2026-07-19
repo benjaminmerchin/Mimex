@@ -1,0 +1,75 @@
+{
+  "schema_version": "2",
+  "slug": "mimex",
+  "display_name": "Mimex — Team Mimex",
+  "description": "Turn any video or audio tutorial into a ready-to-use SKILL.md your coding agent can load: paste a media URL, get back structured steps, commands, and gotchas.",
+  "presentation": {
+    "action": "Distill video into skill",
+    "input": {
+      "label": "Video or audio URL",
+      "icon": "video"
+    },
+    "output": {
+      "label": "SKILL.md for your agent",
+      "icon": "document"
+    }
+  },
+  "price": {
+    "amount_cents": 50,
+    "currency": "EUR"
+  },
+  "run_url": "https://mimex.netlify.app/run",
+  "input_schema": {
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false,
+    "required": [
+      "video_url"
+    ],
+    "properties": {
+      "video_url": {
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https://",
+        "maxLength": 2048,
+        "description": "Direct HTTPS link to a video or audio file (mp4, m4a, mp3, wav, webm), max 100 MB"
+      }
+    }
+  },
+  "output_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "skill_name",
+      "description",
+      "skill_md",
+      "download_url"
+    ],
+    "properties": {
+      "skill_name": {
+        "type": "string",
+        "description": "Kebab-case skill name"
+      },
+      "description": {
+        "type": "string",
+        "description": "One-line summary of the skill"
+      },
+      "skill_md": {
+        "type": "string",
+        "description": "Complete SKILL.md file content ready to drop into an agent's skills directory"
+      },
+      "download_url": {
+        "type": "string",
+        "format": "uri",
+        "description": "Direct link to download the same skill as a .md file"
+      }
+    }
+  },
+  "example": {
+    "input": {
+      "video_url": "https://mimex.netlify.app/samples/demo-linkedin-new.mp4"
+    }
+  },
+  "ownership_token": "ginse_verify_606be2d5f5274035892a3c4e421b6cbb"
+}
