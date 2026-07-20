@@ -3,7 +3,7 @@ name: Deploy Mimex
 on:
   push:
     branches:
-      - feat/vps-backend
+      - main
   workflow_dispatch:
 
 concurrency:
