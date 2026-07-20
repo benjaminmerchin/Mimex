@@ -1,4 +1,5 @@
 import { motion, type Variants } from "motion/react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Accordion,
@@ -35,6 +36,14 @@ function GlitchBar({ className = "", flip = false }: { className?: string; flip?
 }
 
 function Nav() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((response) => setIsAuthenticated(response.ok))
+      .catch(() => setIsAuthenticated(false))
+  }, [])
+
   return (
     <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
@@ -50,7 +59,7 @@ function Nav() {
           <a href="#faq" className="hover:text-foreground">FAQ</a>
         </nav>
         <Button size="sm" className="font-mono text-xs uppercase tracking-widest" asChild>
-          <a href="/login">Get started</a>
+          <a href={isAuthenticated ? "/dashboard" : "/login"}>{isAuthenticated ? "Dashboard" : "Get started"}</a>
         </Button>
       </div>
     </header>

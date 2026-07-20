@@ -1,6 +1,7 @@
 import { serveStatic } from "@hono/node-server/serve-static"
 import { Hono } from "hono"
 import { auth } from "./auth.js"
+import { registerRecordingRoutes } from "./recordings.js"
 
 export function createApp(): Hono {
   const app = new Hono()
@@ -21,6 +22,8 @@ export function createApp(): Hono {
       isDev: "isAnonymous" in session.user && session.user.isAnonymous === true,
     })
   })
+
+  registerRecordingRoutes(app)
 
   app.use("/*", serveStatic({ root: "./dist" }))
   app.get("/*", serveStatic({ path: "./dist/index.html" }))

@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import { DashboardPage } from './pages/dashboard.tsx'
 import { LoginPage } from './pages/login.tsx'
+import { RecordPage } from './pages/record.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<LoginPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/record" element={<RecordPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
