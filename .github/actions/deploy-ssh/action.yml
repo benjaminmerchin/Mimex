@@ -1,5 +1,5 @@
 name: "Deploy Mimex over SSH"
-description: "Atomic-slot deploy of Mimex staging fronted by Traefik"
+description: "Atomic-slot deploy of Mimex fronted by Traefik"
 
 inputs:
   host:
@@ -12,7 +12,7 @@ inputs:
     description: "SSH private key"
     required: true
   container_name:
-    description: "Container name (mimex-staging)"
+    description: "Container name (mimex)"
     required: true
   database_name:
     description: "Dedicated PostgreSQL database name"

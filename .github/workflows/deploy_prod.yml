@@ -1,4 +1,4 @@
-name: Deploy Mimex Staging
+name: Deploy Mimex
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-mimex-staging
+  group: deploy-mimex
   cancel-in-progress: false
 
 permissions:
@@ -15,10 +15,10 @@ permissions:
   packages: write
 
 env:
-  CONTAINER_NAME: mimex-staging
-  DATABASE_NAME: mimex_staging
+  CONTAINER_NAME: mimex
+  DATABASE_NAME: mimex
   RUNTIME_IMAGE: ghcr.io/benjaminmerchin/mimex-runtime:${{ github.sha }}
-  TRAEFIK_HOST: ${{ vars.MIMEX_STAGING_HOST || 'mimex-staging.invalid' }}
+  TRAEFIK_HOST: getmimex.com
 
 jobs:
   deploy:
@@ -52,10 +52,10 @@ jobs:
           docker build \
             --file server/Dockerfile.runtime \
             --tag "${RUNTIME_IMAGE}" \
-            --tag ghcr.io/benjaminmerchin/mimex-runtime:staging \
+            --tag ghcr.io/benjaminmerchin/mimex-runtime:latest \
             .
           docker push "${RUNTIME_IMAGE}"
-          docker push ghcr.io/benjaminmerchin/mimex-runtime:staging
+          docker push ghcr.io/benjaminmerchin/mimex-runtime:latest
 
       - name: Zip artifact
         run: |
@@ -95,7 +95,7 @@ jobs:
           echo "All 3 attempts failed"
           exit 1
 
-      - name: "SSH: Deploy staging"
+      - name: "SSH: Deploy Mimex"
         uses: ./.github/actions/deploy-ssh
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -110,11 +110,11 @@ jobs:
           traefik_host: ${{ env.TRAEFIK_HOST }}
 
   contract:
-    name: Ginse contract on staging
+    name: Ginse contract on deployed Mimex
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Run contract inside the staging container
+      - name: Run contract inside the deployed container
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -123,7 +123,7 @@ jobs:
           command_timeout: 20m
           script: |
             set -e
-            docker exec mimex-staging env \
+            docker exec mimex env \
               BASE_URL=http://127.0.0.1:3000 \
               POLL_TIMEOUT_SECONDS=900 \
               bash /app/tests/contract.sh
