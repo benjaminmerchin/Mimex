@@ -3,9 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.11.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:server": "tsx watch server/src/index.ts",
+    "build": "pnpm db:generate && tsc -b && vite build && pnpm build:server",
+    "build:server": "tsc -p server/tsconfig.json",
+    "start": "node server/dist/index.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
     "lint": "oxlint",
     "preview": "vite preview",
     "fetch-ffmpeg": "mkdir -p vendor && curl -sL https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-linux-x64 -o vendor/ffmpeg-linux-x64 && chmod +x vendor/ffmpeg-linux-x64"
@@ -13,11 +19,14 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource-variable/geist-mono": "^5.2.8",
+    "@hono/node-server": "^2.0.10",
     "@netlify/blobs": "^10.7.9",
+    "@prisma/client": "^6.19.3",
     "@tailwindcss/vite": "^4.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "ffmpeg-static": "^5.3.0",
+    "hono": "^4.12.31",
     "lucide-react": "^1.25.0",
     "motion": "^12.42.2",
     "radix-ui": "^1.6.2",
@@ -34,6 +43,8 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }
