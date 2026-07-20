@@ -1,16 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { ArrowLeft, ArrowRight, Check, FlaskConical, Mail } from "lucide-react"
-import { Link, useNavigate } from "react-router"
+import { Link, useNavigate, useSearchParams } from "react-router"
 import { Button } from "@/components/ui/button"
 
 type LoginState = "idle" | "sending" | "sent"
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState("")
   const [state, setState] = useState<LoginState>("idle")
   const [error, setError] = useState<string | null>(null)
   const [devLoginEnabled, setDevLoginEnabled] = useState(false)
+  const requestedNext = searchParams.get("next")
+  const nextPath = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/dashboard"
 
   useEffect(() => {
     fetch("/api/auth-config")
@@ -26,7 +29,7 @@ export function LoginPage() {
     const response = await fetch("/api/auth/sign-in/magic-link", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: email.trim(), callbackURL: "/dashboard" }),
+      body: JSON.stringify({ email: email.trim(), callbackURL: nextPath }),
     }).catch(() => null)
 
     if (!response?.ok) {
@@ -49,7 +52,7 @@ export function LoginPage() {
       setError("The dev account is unavailable.")
       return
     }
-    navigate("/dashboard")
+    navigate(nextPath)
   }
 
   return (

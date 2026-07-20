@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { CircleCheck, CircleX, Clock3, Download, LogOut, Video } from "lucide-react"
+import { CircleCheck, CircleX, Clock3, CreditCard, Download, LogOut, Video } from "lucide-react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 
@@ -79,6 +79,7 @@ export function DashboardPage() {
           <Link to="/" className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center bg-primary font-mono text-xs text-primary-foreground">M</span>Mimex</Link>
           <div className="flex items-center gap-3">
             {me && <span className="hidden font-mono text-xs text-muted-foreground sm:block">{me.isDev ? "DEV ACCOUNT" : me.email}</span>}
+            <Button variant="outline" size="sm" asChild><Link to="/billing"><CreditCard className="size-3.5" /> Billing</Link></Button>
             <Button variant="outline" size="sm" onClick={signOut}><LogOut className="size-3.5" /> Sign out</Button>
           </div>
         </div>

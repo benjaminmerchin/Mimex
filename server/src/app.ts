@@ -1,6 +1,7 @@
 import { serveStatic } from "@hono/node-server/serve-static"
 import { Hono } from "hono"
 import { auth } from "./auth.js"
+import { registerBillingRoutes } from "./billing.js"
 import { registerRecordingRoutes } from "./recordings.js"
 
 export function createApp(): Hono {
@@ -24,6 +25,7 @@ export function createApp(): Hono {
   })
 
   registerRecordingRoutes(app)
+  registerBillingRoutes(app)
 
   app.use("/*", serveStatic({ root: "./dist" }))
   app.get("/*", serveStatic({ path: "./dist/index.html" }))

@@ -56,6 +56,7 @@ function Nav() {
         <nav className="hidden items-center gap-6 font-mono text-xs uppercase tracking-widest text-muted-foreground sm:flex">
           <a href="#how" className="hover:text-foreground">How it works</a>
           <a href="#features" className="hover:text-foreground">Why Mimex</a>
+          <a href="#pricing" className="hover:text-foreground">Pricing</a>
           <a href="#faq" className="hover:text-foreground">FAQ</a>
         </nav>
         <Button size="sm" className="font-mono text-xs uppercase tracking-widest" asChild>
@@ -358,6 +359,54 @@ const faqs = [
   },
 ]
 
+function Pricing() {
+  return (
+    <section id="pricing" className="border-b">
+      <div className="mx-auto w-full max-w-6xl px-6 py-24">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          variants={fadeUp}
+        >
+          <Tag>Pricing</Tag>
+          <h2 className="mt-6 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">One plan. Every workflow captured.</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Turn your screen recordings and instructional videos into skills your agents can reuse.</p>
+        </motion.div>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          custom={1}
+          variants={fadeUp}
+          className="mt-12 grid border md:grid-cols-[1fr_1.1fr]"
+        >
+          <div className="border-b p-8 md:border-b-0 md:border-r">
+            <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Mimex membership</p>
+            <p className="mt-8 text-6xl font-semibold tracking-tight">15 €<span className="ml-2 text-base font-normal text-muted-foreground">/ month</span></p>
+            <p className="mt-4 text-sm text-muted-foreground">Monthly subscription. Cancel anytime.</p>
+            <Button size="lg" className="mt-8 font-mono text-xs uppercase tracking-widest" asChild>
+              <a href="/billing">Start with Mimex</a>
+            </Button>
+          </div>
+          <div className="grid content-center gap-px bg-border sm:grid-cols-2">
+            {[
+              "Screen + microphone recording",
+              "Transcript and visual analysis",
+              "Agent-ready SKILL.md output",
+              "Private skill dashboard",
+            ].map((feature) => (
+              <div key={feature} className="flex items-start gap-3 bg-background p-6 text-sm">
+                <span className="mt-1 font-mono text-[10px]">■</span>{feature}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
 function Faq() {
   return (
     <section id="faq">
@@ -416,6 +465,7 @@ export default function App() {
         <Features />
         <StartCallout />
         <Stack />
+        <Pricing />
         <Faq />
       </main>
       <Footer />
