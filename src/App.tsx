@@ -53,7 +53,7 @@ function Nav() {
           <a href="#faq" className="hover:text-foreground">FAQ</a>
         </nav>
         <Button size="sm" className="font-mono text-xs uppercase tracking-widest" asChild>
-          <a href="#run">Get started</a>
+          <a href="/login">Get started</a>
         </Button>
       </div>
     </header>
@@ -99,7 +99,7 @@ function Hero() {
           className="mt-10 flex flex-wrap items-center justify-center gap-3"
         >
           <Button size="lg" className="font-mono text-xs uppercase tracking-widest" asChild>
-            <a href="#run">Run it on Ginse</a>
+            <a href="/login">Start creating</a>
           </Button>
           <Button size="lg" variant="outline" className="font-mono text-xs uppercase tracking-widest" asChild>
             <a href="#how">See how it works</a>
@@ -211,12 +211,12 @@ const features = [
     body: "Combines the transcript with what's on screen, so commands and UI paths make it into the skill accurately.",
   },
   {
-    title: "One fixed price per run",
-    body: "Published as a Ginse action: your agent discovers it, pays a visible fixed price from a test wallet, and gets the result back.",
+    title: "Record in your browser",
+    body: "Capture a screen walkthrough with system audio and your microphone, then let Mimex turn it into reusable instructions.",
   },
   {
-    title: "Idempotent & auditable",
-    body: "Every run has an ID, a receipt, and a reproducible output. Retry safely, inspect what was extracted.",
+    title: "Your private skill library",
+    body: "Every generated skill stays attached to your account, ready to inspect, download, and reuse whenever your agent needs it.",
   },
 ]
 
@@ -258,7 +258,7 @@ function Features() {
   )
 }
 
-function GinseCallout() {
+function StartCallout() {
   return (
     <section id="run" className="border-b">
       <div className="mx-auto w-full max-w-6xl px-6 py-24">
@@ -273,18 +273,16 @@ function GinseCallout() {
           <GlitchBar flip className="absolute -bottom-8 -right-20 h-40 w-80 opacity-30 blur-[1px]" />
           <div className="relative">
             <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              Available on the Ginse marketplace
+              One workspace for every workflow
             </p>
             <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              One fixed-price action, callable by any agent
+              Turn the way you work into skills your agent can reuse
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-              Ask your agent to find Mimex on Ginse, or browse the listing yourself.
+              Sign in with a magic link, record a walkthrough, and keep the result in your private library.
             </p>
             <Button size="lg" className="mt-8 font-mono text-xs uppercase tracking-widest" asChild>
-              <a href="https://app.ginse.ai/" target="_blank" rel="noreferrer">
-                Open Ginse
-              </a>
+              <a href="/login">Open Mimex</a>
             </Button>
           </div>
         </motion.div>
@@ -295,10 +293,10 @@ function GinseCallout() {
 
 const stack = [
   { name: "OpenAI Whisper", role: "speech-to-text" },
-  { name: "GPT-4o-mini vision", role: "skill generation" },
+  { name: "GPT-5.6 Luna", role: "vision + skill generation" },
   { name: "ffmpeg", role: "scene detection + audio" },
-  { name: "Ginse", role: "agent marketplace" },
-  { name: "Netlify", role: "functions + blobs + hosting" },
+  { name: "PostgreSQL", role: "accounts + skill library" },
+  { name: "Hono · Node 22", role: "API + worker" },
   { name: "React · Vite · Tailwind", role: "shadcn/ui + motion" },
 ]
 
@@ -346,7 +344,7 @@ const faqs = [
   },
   {
     q: "How does payment work?",
-    a: "Through Ginse. Each run has a visible fixed price charged to the calling agent's wallet — during the hackathon that's a €10 test balance, not real money.",
+    a: "Mimex is €15 per month. Subscription management and secure checkout are handled by Stripe.",
   },
   {
     q: "Is my video stored?",
@@ -395,7 +393,7 @@ function Footer() {
     <footer className="border-t">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 font-mono text-xs uppercase tracking-widest text-muted-foreground sm:flex-row">
         <p>Mimex — video in, skill out</p>
-        <p>Built with OpenAI · Listed on Ginse</p>
+        <p>Built with OpenAI · Powered by GPT-5.6 Luna</p>
         <p>OpenAI Build Week — Paris, 2026</p>
       </div>
     </footer>
@@ -410,7 +408,7 @@ export default function App() {
         <Hero />
         <HowItWorks />
         <Features />
-        <GinseCallout />
+        <StartCallout />
         <Stack />
         <Faq />
       </main>
