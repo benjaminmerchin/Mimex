@@ -40,7 +40,11 @@ export function LoginPage() {
 
   async function devLogin() {
     setError(null)
-    const response = await fetch("/api/auth/sign-in/anonymous", { method: "POST" }).catch(() => null)
+    const response = await fetch("/api/auth/sign-in/anonymous", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    }).catch(() => null)
     if (!response?.ok) {
       setError("The dev account is unavailable.")
       return
