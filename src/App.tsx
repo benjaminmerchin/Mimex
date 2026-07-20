@@ -18,8 +18,8 @@ const fadeUp: Variants = {
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 border px-3 py-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-      <span className="size-1.5 bg-foreground" />
+    <span className="inline-flex max-w-full items-center justify-center gap-2 border px-3 py-1.5 text-center font-mono text-xs uppercase leading-relaxed tracking-widest text-muted-foreground">
+      <span className="size-1.5 shrink-0 bg-foreground" />
       {children}
     </span>
   )
@@ -27,11 +27,8 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 function GlitchBar({ className = "", flip = false }: { className?: string; flip?: boolean }) {
   return (
-    <motion.div
+    <div
       aria-hidden
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1.2 }}
       className={`pixel-glitch pointer-events-none ${flip ? "-scale-x-100" : ""} ${className}`}
     />
   )
@@ -62,10 +59,10 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden border-b">
-      <GlitchBar className="absolute -left-24 top-24 h-64 w-[28rem] opacity-60 blur-[1px]" />
-      <GlitchBar flip className="absolute -right-24 top-10 h-72 w-[30rem] opacity-60 blur-[1px]" />
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-6 pb-24 pt-28 text-center">
+    <section className="relative isolate overflow-hidden border-b">
+      <GlitchBar className="absolute -left-48 top-32 -z-10 h-40 w-80 opacity-25 blur-[1px] sm:-left-24 sm:top-24 sm:h-64 sm:w-[28rem] sm:opacity-60" />
+      <GlitchBar flip className="absolute -right-56 top-12 -z-10 h-48 w-80 opacity-20 blur-[1px] sm:-right-24 sm:top-10 sm:h-72 sm:w-[30rem] sm:opacity-60" />
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-4 pb-20 pt-20 text-center sm:px-6 sm:pb-24 sm:pt-28">
         <motion.div initial="hidden" animate="visible" variants={fadeUp}>
           <Tag>OpenAI Build Week Community Hackathon — Paris</Tag>
         </motion.div>
