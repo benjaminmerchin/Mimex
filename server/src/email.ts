@@ -17,7 +17,7 @@ export async function sendMagicLink({ to, url }: MagicLinkEmail): Promise<void> 
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) throw new Error("missing_resend_api_key")
 
-  const fromAddress = process.env.RESEND_FROM ?? "updates@getmimex.com"
+  const fromAddress = process.env.RESEND_FROM ?? "login@updates.getmimex.com"
   const safeUrl = escapeHtml(url)
   const resend = new Resend(apiKey)
   const { error } = await resend.emails.send({
