@@ -367,7 +367,7 @@ function Faq() {
           viewport={{ once: true, margin: "-80px" }}
           custom={1}
           variants={fadeUp}
-          className="mt-8 max-w-2xl"
+          className="mt-8 w-full"
         >
           <Accordion type="single" collapsible>
             {faqs.map((f) => (
