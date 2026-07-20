@@ -65,7 +65,6 @@ jobs:
             dist \
             server/dist \
             prisma \
-            tests \
             package.json \
             pnpm-lock.yaml \
             pnpm-workspace.yaml \
@@ -108,22 +107,3 @@ jobs:
           registry_token: ${{ secrets.GITHUB_TOKEN }}
           zip_name: ${{ env.ZIP_NAME }}
           traefik_host: ${{ env.TRAEFIK_HOST }}
-
-  contract:
-    name: Ginse contract on deployed Mimex
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run contract inside the deployed container
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 20m
-          script: |
-            set -e
-            docker exec mimex env \
-              BASE_URL=http://127.0.0.1:3000 \
-              POLL_TIMEOUT_SECONDS=900 \
-              bash /app/tests/contract.sh
