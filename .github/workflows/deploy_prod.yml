@@ -1,0 +1,129 @@
+name: Deploy Mimex Staging
+
+on:
+  push:
+    branches:
+      - feat/vps-backend
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mimex-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CONTAINER_NAME: mimex-staging
+  DATABASE_NAME: mimex_staging
+  RUNTIME_IMAGE: ghcr.io/benjaminmerchin/mimex-runtime:${{ github.sha }}
+  TRAEFIK_HOST: ${{ vars.MIMEX_STAGING_HOST || 'mimex-staging.invalid' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend and server
+        run: pnpm build
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push runtime image
+        run: |
+          docker build \
+            --file server/Dockerfile.runtime \
+            --tag "${RUNTIME_IMAGE}" \
+            --tag ghcr.io/benjaminmerchin/mimex-runtime:staging \
+            .
+          docker push "${RUNTIME_IMAGE}"
+          docker push ghcr.io/benjaminmerchin/mimex-runtime:staging
+
+      - name: Zip artifact
+        run: |
+          ZIP_NAME=deploy-${{ env.CONTAINER_NAME }}-${{ github.run_number }}.zip
+          echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+          zip -r "$ZIP_NAME" \
+            dist \
+            server/dist \
+            prisma \
+            tests \
+            package.json \
+            pnpm-lock.yaml \
+            pnpm-workspace.yaml \
+            -x '*.git*' 'node_modules/*' '.env'
+
+      - name: Upload ZIP to VPS (with retry)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt/3..."
+            if timeout 60s scp -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+              -i ~/.ssh/deploy_key "${{ env.ZIP_NAME }}" "$VPS_USER@$VPS_HOST:/home/ubuntu/"; then
+              echo "Upload successful!"
+              exit 0
+            else
+              echo "Attempt $attempt failed, waiting 10s..."
+              sleep 10
+            fi
+          done
+          echo "All 3 attempts failed"
+          exit 1
+
+      - name: "SSH: Deploy staging"
+        uses: ./.github/actions/deploy-ssh
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          container_name: ${{ env.CONTAINER_NAME }}
+          database_name: ${{ env.DATABASE_NAME }}
+          runtime_image: ${{ env.RUNTIME_IMAGE }}
+          registry_username: ${{ github.actor }}
+          registry_token: ${{ secrets.GITHUB_TOKEN }}
+          zip_name: ${{ env.ZIP_NAME }}
+          traefik_host: ${{ env.TRAEFIK_HOST }}
+
+  contract:
+    name: Ginse contract on staging
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run contract inside the staging container
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            set -e
+            docker exec mimex-staging env \
+              BASE_URL=http://127.0.0.1:3000 \
+              POLL_TIMEOUT_SECONDS=900 \
+              bash /app/tests/contract.sh
