@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server"
 import { createApp } from "./app.js"
+import { startWorker } from "./worker.js"
 
 const DEFAULT_PORT = 3000
 const configuredPort = Number.parseInt(process.env.PORT ?? "", 10)
@@ -10,3 +11,5 @@ const app = createApp()
 serve({ fetch: app.fetch, hostname: "0.0.0.0", port }, (info) => {
   console.log(`Mimex server listening on http://0.0.0.0:${info.port}`)
 })
+
+startWorker()
