@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { CircleCheck, CircleX, Clock3, CreditCard, Download, GitMerge, LogOut, Plus, Sparkles, X } from "lucide-react"
+import { Check, CircleCheck, CircleX, Clock3, Copy, CreditCard, Download, Eye, GitMerge, Loader2, LogOut, Pencil, Plus, Sparkles, X } from "lucide-react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 
@@ -21,6 +21,13 @@ type RunSummary = {
   downloadUrl: string | null
 }
 
+type SkillPreview = {
+  runId: string
+  name: string
+  content: string | null
+  error: string | null
+}
+
 export function DashboardPage() {
   const navigate = useNavigate()
   const [me, setMe] = useState<Me | null>(null)
@@ -31,6 +38,15 @@ export function DashboardPage() {
   const [refiningRunId, setRefiningRunId] = useState<string | null>(null)
   const [refineError, setRefineError] = useState<string | null>(null)
   const [refinedRunId, setRefinedRunId] = useState<string | null>(null)
+  const [preview, setPreview] = useState<SkillPreview | null>(null)
+  const [copyingRunId, setCopyingRunId] = useState<string | null>(null)
+  const [copiedRunId, setCopiedRunId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<{ runId: string; message: string } | null>(null)
+  const [renamingRunId, setRenamingRunId] = useState<string | null>(null)
+  const [nameDraft, setNameDraft] = useState("")
+  const [savingName, setSavingName] = useState(false)
+  const [renameError, setRenameError] = useState<string | null>(null)
+  const [renamedRunId, setRenamedRunId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/me")
@@ -44,6 +60,15 @@ export function DashboardPage() {
       .then(setMe)
       .catch(() => navigate("/login", { replace: true }))
   }, [navigate])
+
+  useEffect(() => {
+    if (!preview) return
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setPreview(null)
+    }
+    window.addEventListener("keydown", closeOnEscape)
+    return () => window.removeEventListener("keydown", closeOnEscape)
+  }, [preview])
 
   useEffect(() => {
     let active = true
@@ -79,9 +104,104 @@ export function DashboardPage() {
 
   function toggleEditor(runId: string) {
     setEditingRunId((current) => current === runId ? null : runId)
+    setRenamingRunId(null)
+    setNameDraft("")
     setRefinePrompt("")
     setRefineError(null)
     setRefinedRunId(null)
+  }
+
+  function toggleRename(run: RunSummary) {
+    if (renamingRunId === run.id) {
+      setRenamingRunId(null)
+      setNameDraft("")
+    } else {
+      setRenamingRunId(run.id)
+      setNameDraft(run.skillName ?? "")
+      setEditingRunId(null)
+    }
+    setRenameError(null)
+    setRenamedRunId(null)
+  }
+
+  async function renameRun(event: FormEvent<HTMLFormElement>, runId: string) {
+    event.preventDefault()
+    const name = nameDraft.trim()
+    if (!name || savingName) return
+    setSavingName(true)
+    setRenameError(null)
+    const response = await fetch(`/api/runs/${runId}/name`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    }).catch(() => null)
+    const body = await response?.json().catch(() => null) as { run?: RunSummary; error?: string } | null
+    if (!response?.ok || !body?.run) {
+      setRenameError(body?.error ?? "Unable to rename this skill.")
+      setSavingName(false)
+      return
+    }
+    setRuns((current) => current.map((run) => run.id === runId ? body.run as RunSummary : run))
+    setRenamingRunId(null)
+    setNameDraft("")
+    setSavingName(false)
+    setRenamedRunId(runId)
+  }
+
+  async function fetchSkill(run: RunSummary): Promise<string> {
+    if (!run.downloadUrl) throw new Error("This skill is not ready yet.")
+    const response = await fetch(run.downloadUrl)
+    if (!response.ok) throw new Error("Unable to load this skill.")
+    return response.text()
+  }
+
+  async function writeToClipboard(content: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(content)
+      return
+    } catch {
+      const textarea = document.createElement("textarea")
+      textarea.value = content
+      textarea.setAttribute("readonly", "")
+      textarea.style.position = "fixed"
+      textarea.style.opacity = "0"
+      document.body.appendChild(textarea)
+      textarea.select()
+      const copied = document.execCommand("copy")
+      textarea.remove()
+      if (!copied) throw new Error("Unable to access the clipboard.")
+    }
+  }
+
+  async function previewSkill(run: RunSummary) {
+    setActionError(null)
+    setPreview({ runId: run.id, name: run.skillName ?? run.filename, content: null, error: null })
+    try {
+      const content = await fetchSkill(run)
+      setPreview((current) => current?.runId === run.id ? { ...current, content } : current)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to load this skill."
+      setPreview((current) => current?.runId === run.id ? { ...current, error: message } : current)
+    }
+  }
+
+  async function copySkill(run: RunSummary) {
+    setCopyingRunId(run.id)
+    setCopiedRunId(null)
+    setActionError(null)
+    try {
+      const content = await fetchSkill(run)
+      await writeToClipboard(content)
+      setCopiedRunId(run.id)
+      window.setTimeout(() => setCopiedRunId((current) => current === run.id ? null : current), 2_000)
+    } catch (error) {
+      setActionError({
+        runId: run.id,
+        message: error instanceof Error ? error.message : "Unable to copy this skill.",
+      })
+    } finally {
+      setCopyingRunId(null)
+    }
   }
 
   async function refineRun(event: FormEvent<HTMLFormElement>, runId: string) {
@@ -162,9 +282,21 @@ export function DashboardPage() {
                     </p>
                     <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</p>
                     {refinedRunId === run.id && <p className="mt-2 text-xs text-emerald-400">Skill updated with AI.</p>}
+                    {renamedRunId === run.id && <p className="mt-2 text-xs text-emerald-400">Skill renamed.</p>}
                   </div>
                   {run.downloadUrl && (
                     <div className="flex shrink-0 flex-wrap gap-2">
+                      <Button variant="outline" onClick={() => previewSkill(run)}>
+                        <Eye className="size-4" /> Preview
+                      </Button>
+                      <Button variant="outline" onClick={() => copySkill(run)} disabled={copyingRunId === run.id}>
+                        {copyingRunId === run.id ? <Loader2 className="size-4 animate-spin" /> : copiedRunId === run.id ? <Check className="size-4 text-emerald-400" /> : <Copy className="size-4" />}
+                        {copiedRunId === run.id ? "Copied" : "Copy to clipboard"}
+                      </Button>
+                      <Button variant="outline" onClick={() => toggleRename(run)}>
+                        {renamingRunId === run.id ? <X className="size-4" /> : <Pencil className="size-4" />}
+                        {renamingRunId === run.id ? "Cancel rename" : "Rename"}
+                      </Button>
                       <Button variant="outline" onClick={() => toggleEditor(run.id)}>
                         {editingRunId === run.id ? <X className="size-4" /> : <Sparkles className="size-4" />}
                         {editingRunId === run.id ? "Close" : "Update with AI"}
@@ -175,6 +307,29 @@ export function DashboardPage() {
                     </div>
                   )}
                 </div>
+                {actionError?.runId === run.id && <p className="mt-3 text-xs text-destructive">{actionError.message}</p>}
+                {renamingRunId === run.id && (
+                  <form className="mt-5 border-t pt-5" onSubmit={(event) => renameRun(event, run.id)}>
+                    <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" htmlFor={`rename-${run.id}`}>Skill name</label>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <input
+                        id={`rename-${run.id}`}
+                        value={nameDraft}
+                        onChange={(event) => setNameDraft(event.target.value)}
+                        maxLength={80}
+                        autoFocus
+                        placeholder="my-reusable-workflow"
+                        className="h-10 flex-1 border bg-background px-3 font-mono text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+                      />
+                      <Button type="submit" disabled={!nameDraft.trim() || savingName}>
+                        {savingName ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                        {savingName ? "Saving…" : "Save name"}
+                      </Button>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">Saved as lowercase kebab-case in the dashboard and SKILL.md frontmatter.</p>
+                    {renameError && <p className="mt-2 text-xs text-destructive">{renameError}</p>}
+                  </form>
+                )}
                 {editingRunId === run.id && (
                   <form className="mt-5 border-t pt-5" onSubmit={(event) => refineRun(event, run.id)}>
                     <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" htmlFor={`refine-${run.id}`}>Tell Mimex what to change</label>
@@ -202,6 +357,38 @@ export function DashboardPage() {
           </div>
         )}
       </section>
+      {preview && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 sm:p-8" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setPreview(null)
+        }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="skill-preview-title" className="flex max-h-[90dvh] w-full max-w-4xl flex-col border bg-background shadow-2xl">
+            <header className="flex items-center justify-between gap-4 border-b px-5 py-4">
+              <div className="min-w-0">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">■ SKILL.md preview</p>
+                <h2 id="skill-preview-title" className="mt-1 truncate font-medium">{preview.name}</h2>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setPreview(null)} aria-label="Close preview"><X className="size-4" /></Button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-auto p-5 sm:p-7">
+              {!preview.content && !preview.error && <div className="grid min-h-64 place-items-center"><span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading skill…</span></div>}
+              {preview.error && <p className="border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">{preview.error}</p>}
+              {preview.content && <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-6 text-foreground sm:text-sm">{preview.content}</pre>}
+            </div>
+            {preview.content && (
+              <footer className="flex flex-wrap justify-end gap-2 border-t p-4">
+                <Button variant="outline" onClick={() => {
+                  const run = runs.find((candidate) => candidate.id === preview.runId)
+                  if (run) void copySkill(run)
+                }}>
+                  {copiedRunId === preview.runId ? <Check className="size-4 text-emerald-400" /> : <Copy className="size-4" />}
+                  {copiedRunId === preview.runId ? "Copied" : "Copy to clipboard"}
+                </Button>
+                <Button asChild><a href={`/api/runs/${preview.runId}/skill.md`}><Download className="size-4" /> Download .md</a></Button>
+              </footer>
+            )}
+          </section>
+        </div>
+      )}
     </main>
   )
 }

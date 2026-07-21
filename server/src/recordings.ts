@@ -1,4 +1,5 @@
 import Busboy from "busboy"
+import type { Prisma } from "@prisma/client"
 import { createHash, randomUUID } from "node:crypto"
 import { createWriteStream } from "node:fs"
 import { mkdir, rename, rm } from "node:fs/promises"
@@ -138,6 +139,27 @@ function jsonObject(value: unknown): Record<string, unknown> | null {
     : null
 }
 
+function normalizeSkillName(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64)
+    .replace(/-+$/g, "")
+}
+
+function renameSkillMarkdown(skillMd: string, name: string): string {
+  const frontmatter = skillMd.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+  if (!frontmatter) return skillMd
+  const current = frontmatter[1] ?? ""
+  const renamed = /^name\s*:/m.test(current)
+    ? current.replace(/^name\s*:.*$/m, `name: ${name}`)
+    : `name: ${name}\n${current}`
+  return skillMd.replace(frontmatter[0], `---\n${renamed}\n---`)
+}
+
 function runResponse(run: {
   id: string
   status: "pending" | "succeeded" | "failed"
@@ -265,6 +287,54 @@ export function registerRecordingRoutes(app: Hono): void {
     context.header("Content-Type", "text/markdown; charset=utf-8")
     context.header("Content-Disposition", `attachment; filename="${safeName || "mimex-skill"}.md"`)
     return context.body(skill)
+  })
+
+  app.patch("/api/runs/:id/name", async (context) => {
+    const session = await auth.api.getSession({ headers: context.req.raw.headers })
+    if (!session) return context.json({ error: "unauthorized" }, 401)
+
+    const contentLength = Number(context.req.header("content-length") ?? "0")
+    if (contentLength > 2 * 1024) return context.json({ error: "request_too_large" }, 413)
+    const body = await context.req.json<{ name?: unknown }>().catch(() => null)
+    const requestedName = typeof body?.name === "string" ? body.name.trim() : ""
+    const name = normalizeSkillName(requestedName)
+    if (!name) return context.json({ error: "Enter a valid skill name." }, 422)
+
+    const access = await runAccessWhere(session.user.id)
+    const run = await db.run.findFirst({
+      where: { id: context.req.param("id"), status: "succeeded", ...access },
+      select: { id: true, output: true },
+    })
+    if (!run) return context.json({ error: "not_found" }, 404)
+
+    const currentOutput = jsonObject(run.output)
+    const currentSkill = currentOutput?.skill_md
+    if (!currentOutput || typeof currentSkill !== "string") {
+      return context.json({ error: "skill_not_ready" }, 409)
+    }
+
+    const updated = await db.run.update({
+      where: { id: run.id },
+      data: {
+        output: {
+          ...currentOutput,
+          skill_name: name,
+          skill_md: renameSkillMarkdown(currentSkill, name),
+          download_url: `/api/runs/${run.id}/skill.md`,
+        } as Prisma.InputJsonObject,
+      },
+      select: {
+        id: true,
+        status: true,
+        input: true,
+        output: true,
+        error: true,
+        createdAt: true,
+        updatedAt: true,
+        completedAt: true,
+      },
+    })
+    return context.json({ run: runResponse(updated) })
   })
 
   app.post("/api/runs/:id/refine", async (context) => {
