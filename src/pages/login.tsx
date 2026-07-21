@@ -43,13 +43,28 @@ export function LoginPage() {
 
   async function devLogin() {
     setError(null)
+    const currentSession = await fetch("/api/me").catch(() => null)
+    if (currentSession?.ok) {
+      const currentUser = await currentSession.json().catch(() => null) as { isDev?: boolean } | null
+      if (currentUser?.isDev) {
+        navigate(nextPath)
+        return
+      }
+      await fetch("/api/auth/sign-out", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      })
+    }
+
     const response = await fetch("/api/auth/sign-in/anonymous", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({}),
     }).catch(() => null)
     if (!response?.ok) {
-      setError("The dev account is unavailable.")
+      const body = await response?.json().catch(() => null) as { message?: string } | null
+      setError(body?.message ?? "The dev account is unavailable.")
       return
     }
     navigate(nextPath)
