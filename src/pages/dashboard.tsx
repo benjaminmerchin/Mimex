@@ -105,7 +105,7 @@ export function DashboardPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="truncate font-medium">{run.skillName ?? run.filename}</h2>
                     <span className="inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {run.status === "pending" && <Clock3 className="size-3 animate-pulse" />}
+                      {run.status === "pending" && <Clock3 className="size-3.5 animate-spin [animation-duration:1.8s]" />}
                       {run.status === "succeeded" && <CircleCheck className="size-3 text-emerald-400" />}
                       {run.status === "failed" && <CircleX className="size-3 text-destructive" />}
                       {run.status}
