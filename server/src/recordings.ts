@@ -5,9 +5,11 @@ import { mkdir, rename, rm } from "node:fs/promises"
 import { basename, extname, join } from "node:path"
 import { Readable } from "node:stream"
 import { pipeline } from "node:stream/promises"
+import type { Prisma } from "@prisma/client"
 import type { Hono } from "hono"
 import { auth } from "./auth.js"
 import { db } from "./db.js"
+import { refineSkill } from "./skill-refinement.js"
 
 const MAX_RECORDING_BYTES = 500 * 1024 * 1024
 
@@ -162,6 +164,17 @@ function runResponse(run: {
   }
 }
 
+async function runAccessWhere(userId: string): Promise<Prisma.RunWhereInput> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { isAnonymous: true },
+  })
+  if (process.env.DEV_LOGIN_ENABLED === "true" && user?.isAnonymous) {
+    return { user: { isAnonymous: true } }
+  }
+  return { userId }
+}
+
 export function registerRecordingRoutes(app: Hono): void {
   app.post("/api/recordings", async (context) => {
     const session = await auth.api.getSession({ headers: context.req.raw.headers })
@@ -198,8 +211,10 @@ export function registerRecordingRoutes(app: Hono): void {
     const session = await auth.api.getSession({ headers: context.req.raw.headers })
     if (!session) return context.json({ error: "unauthorized" }, 401)
 
+    const access = await runAccessWhere(session.user.id)
+
     const runs = await db.run.findMany({
-      where: { userId: session.user.id },
+      where: access,
       orderBy: { createdAt: "desc" },
       take: 100,
       select: {
@@ -220,8 +235,10 @@ export function registerRecordingRoutes(app: Hono): void {
     const session = await auth.api.getSession({ headers: context.req.raw.headers })
     if (!session) return context.json({ error: "unauthorized" }, 401)
 
+    const access = await runAccessWhere(session.user.id)
+
     const run = await db.run.findFirst({
-      where: { id: context.req.param("id"), userId: session.user.id },
+      where: { id: context.req.param("id"), ...access },
       select: {
         id: true,
         status: true,
@@ -241,8 +258,10 @@ export function registerRecordingRoutes(app: Hono): void {
     const session = await auth.api.getSession({ headers: context.req.raw.headers })
     if (!session) return context.json({ error: "unauthorized" }, 401)
 
+    const access = await runAccessWhere(session.user.id)
+
     const run = await db.run.findFirst({
-      where: { id: context.req.param("id"), userId: session.user.id },
+      where: { id: context.req.param("id"), ...access },
       select: { status: true, output: true },
     })
     if (!run) return context.json({ error: "not_found" }, 404)
@@ -257,5 +276,56 @@ export function registerRecordingRoutes(app: Hono): void {
     context.header("Content-Type", "text/markdown; charset=utf-8")
     context.header("Content-Disposition", `attachment; filename="${safeName || "mimex-skill"}.md"`)
     return context.body(skill)
+  })
+
+  app.post("/api/runs/:id/refine", async (context) => {
+    const session = await auth.api.getSession({ headers: context.req.raw.headers })
+    if (!session) return context.json({ error: "unauthorized" }, 401)
+
+    const contentLength = Number(context.req.header("content-length") ?? "0")
+    if (contentLength > 8 * 1024) return context.json({ error: "request_too_large" }, 413)
+    const body = await context.req.json<{ prompt?: unknown }>().catch(() => null)
+    const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : ""
+    if (prompt.length < 2 || prompt.length > 4_000) {
+      return context.json({ error: "Prompt must be between 2 and 4,000 characters." }, 422)
+    }
+
+    const access = await runAccessWhere(session.user.id)
+    const run = await db.run.findFirst({
+      where: { id: context.req.param("id"), status: "succeeded", ...access },
+      select: { id: true, output: true },
+    })
+    if (!run) return context.json({ error: "not_found" }, 404)
+
+    const currentOutput = jsonObject(run.output)
+    const currentSkill = currentOutput?.skill_md
+    if (typeof currentSkill !== "string") return context.json({ error: "skill_not_ready" }, 409)
+
+    try {
+      const refined = await refineSkill(currentSkill, prompt)
+      const updated = await db.run.update({
+        where: { id: run.id },
+        data: {
+          output: {
+            ...refined,
+            download_url: `/api/runs/${run.id}/skill.md`,
+          },
+        },
+        select: {
+          id: true,
+          status: true,
+          input: true,
+          output: true,
+          error: true,
+          createdAt: true,
+          updatedAt: true,
+          completedAt: true,
+        },
+      })
+      return context.json({ run: runResponse(updated) })
+    } catch (error) {
+      console.error("[skills] Unable to refine skill:", error)
+      return context.json({ error: "Unable to update the skill." }, 502)
+    }
   })
 }

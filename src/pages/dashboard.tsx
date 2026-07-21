@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { CircleCheck, CircleX, Clock3, CreditCard, Download, LogOut, Video } from "lucide-react"
+import { useEffect, useState, type FormEvent } from "react"
+import { CircleCheck, CircleX, Clock3, CreditCard, Download, LogOut, Sparkles, Video, X } from "lucide-react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 
@@ -26,6 +26,11 @@ export function DashboardPage() {
   const [me, setMe] = useState<Me | null>(null)
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [loadingRuns, setLoadingRuns] = useState(true)
+  const [editingRunId, setEditingRunId] = useState<string | null>(null)
+  const [refinePrompt, setRefinePrompt] = useState("")
+  const [refiningRunId, setRefiningRunId] = useState<string | null>(null)
+  const [refineError, setRefineError] = useState<string | null>(null)
+  const [refinedRunId, setRefinedRunId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/me")
@@ -72,6 +77,40 @@ export function DashboardPage() {
     navigate("/", { replace: true })
   }
 
+  function toggleEditor(runId: string) {
+    setEditingRunId((current) => current === runId ? null : runId)
+    setRefinePrompt("")
+    setRefineError(null)
+    setRefinedRunId(null)
+  }
+
+  async function refineRun(event: FormEvent<HTMLFormElement>, runId: string) {
+    event.preventDefault()
+    const prompt = refinePrompt.trim()
+    if (!prompt || refiningRunId) return
+
+    setRefiningRunId(runId)
+    setRefineError(null)
+    setRefinedRunId(null)
+    const response = await fetch(`/api/runs/${runId}/refine`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    }).catch(() => null)
+    const body = await response?.json().catch(() => null) as { run?: RunSummary; error?: string } | null
+    if (!response?.ok || !body?.run) {
+      setRefineError(body?.error ?? "Unable to update the skill.")
+      setRefiningRunId(null)
+      return
+    }
+
+    setRuns((current) => current.map((run) => run.id === runId ? body.run as RunSummary : run))
+    setRefiningRunId(null)
+    setEditingRunId(null)
+    setRefinePrompt("")
+    setRefinedRunId(runId)
+  }
+
   return (
     <main className="min-h-screen">
       <header className="border-b">
@@ -100,26 +139,57 @@ export function DashboardPage() {
         ) : (
           <div className="mt-10 border">
             {runs.map((run) => (
-              <article key={run.id} className="flex flex-col gap-5 border-b p-5 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="truncate font-medium">{run.skillName ?? run.filename}</h2>
-                    <span className="inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {run.status === "pending" && <Clock3 className="size-3.5 animate-spin [animation-duration:1.8s]" />}
-                      {run.status === "succeeded" && <CircleCheck className="size-3 text-emerald-400" />}
-                      {run.status === "failed" && <CircleX className="size-3 text-destructive" />}
-                      {run.status}
-                    </span>
+              <article key={run.id} className="border-b p-5 last:border-b-0">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 className="truncate font-medium">{run.skillName ?? run.filename}</h2>
+                      <span className="inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {run.status === "pending" && <Clock3 className="size-3.5 animate-spin [animation-duration:1.8s]" />}
+                        {run.status === "succeeded" && <CircleCheck className="size-3 text-emerald-400" />}
+                        {run.status === "failed" && <CircleX className="size-3 text-destructive" />}
+                        {run.status}
+                      </span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                      {run.description ?? (run.status === "pending" ? "Mimex is processing your recording." : run.error ?? "Skill generation failed.")}
+                    </p>
+                    <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</p>
+                    {refinedRunId === run.id && <p className="mt-2 text-xs text-emerald-400">Skill updated with AI.</p>}
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                    {run.description ?? (run.status === "pending" ? "Mimex is processing your recording." : run.error ?? "Skill generation failed.")}
-                  </p>
-                  <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</p>
+                  {run.downloadUrl && (
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <Button variant="outline" onClick={() => toggleEditor(run.id)}>
+                        {editingRunId === run.id ? <X className="size-4" /> : <Sparkles className="size-4" />}
+                        {editingRunId === run.id ? "Close" : "Update with AI"}
+                      </Button>
+                      <Button variant="outline" asChild>
+                        <a href={run.downloadUrl}><Download className="size-4" /> Download .md</a>
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                {run.downloadUrl && (
-                  <Button variant="outline" asChild className="shrink-0">
-                    <a href={run.downloadUrl}><Download className="size-4" /> Download .md</a>
-                  </Button>
+                {editingRunId === run.id && (
+                  <form className="mt-5 border-t pt-5" onSubmit={(event) => refineRun(event, run.id)}>
+                    <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground" htmlFor={`refine-${run.id}`}>Tell Mimex what to change</label>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <textarea
+                        id={`refine-${run.id}`}
+                        value={refinePrompt}
+                        onChange={(event) => setRefinePrompt(event.target.value)}
+                        maxLength={4_000}
+                        rows={2}
+                        autoFocus
+                        placeholder="e.g. Add more precise verification steps and keep the commands unchanged."
+                        className="min-h-20 flex-1 resize-y border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+                      />
+                      <Button type="submit" className="sm:self-stretch" disabled={!refinePrompt.trim() || refiningRunId === run.id}>
+                        <Sparkles className={refiningRunId === run.id ? "size-4 animate-pulse" : "size-4"} />
+                        {refiningRunId === run.id ? "Updating…" : "Update skill"}
+                      </Button>
+                    </div>
+                    {refineError && <p className="mt-2 text-xs text-destructive">{refineError}</p>}
+                  </form>
                 )}
               </article>
             ))}
