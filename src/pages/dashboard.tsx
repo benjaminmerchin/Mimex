@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { CircleCheck, CircleX, Clock3, CreditCard, Download, LogOut, Sparkles, Video, X } from "lucide-react"
+import { Braces, CircleCheck, CircleX, Clock3, CreditCard, Download, FlaskConical, LogOut, Sparkles, Video, X } from "lucide-react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 
@@ -19,6 +19,7 @@ type RunSummary = {
   error: string | null
   createdAt: string
   downloadUrl: string | null
+  automationUrl: string | null
 }
 
 export function DashboardPage() {
@@ -130,7 +131,10 @@ export function DashboardPage() {
             <h1 className="text-3xl font-semibold tracking-tight">Your skills</h1>
             <p className="mt-2 text-sm text-muted-foreground">Record a workflow and turn it into an agent-ready skill.</p>
           </div>
-          <Button asChild><Link to="/record"><Video className="size-4" /> New recording</Link></Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild><Link to="/teach"><FlaskConical className="size-4" /> Teach live</Link></Button>
+            <Button asChild><Link to="/record"><Video className="size-4" /> New recording</Link></Button>
+          </div>
         </div>
         {loadingRuns ? (
           <div className="mt-10 border border-dashed px-6 py-16 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">Loading runs…</div>
@@ -166,6 +170,11 @@ export function DashboardPage() {
                       <Button variant="outline" asChild>
                         <a href={run.downloadUrl}><Download className="size-4" /> Download .md</a>
                       </Button>
+                      {run.automationUrl && (
+                        <Button variant="outline" asChild>
+                          <a href={run.automationUrl}><Braces className="size-4" /> Playwright</a>
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
