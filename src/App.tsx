@@ -379,7 +379,7 @@ function Pricing() {
           viewport={{ once: true, margin: "-80px" }}
           custom={1}
           variants={fadeUp}
-          className="mt-12 grid border md:grid-cols-[1fr_1.1fr]"
+          className="mt-12 grid border md:grid-cols-2"
         >
           <div className="border-b p-8 md:border-b-0 md:border-r">
             <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Mimex membership</p>
@@ -389,7 +389,7 @@ function Pricing() {
               <a href="/billing">Start with Mimex</a>
             </Button>
           </div>
-          <div className="grid content-center gap-px bg-border sm:grid-cols-2">
+          <div className="grid auto-rows-fr gap-px bg-border sm:grid-cols-2 md:grid-rows-2">
             {[
               "Screen + microphone recording",
               "Transcript and visual analysis",
