@@ -1,75 +1,76 @@
-# Mimex — show it once, give it to your agent
+# Mimex — teach Codex how you work
 
 🏆 Winner — OpenAI Build Week Community Hackathon, Paris 2026.
 
-Mimex turns demonstrated workflows into portable agent skills. It can learn from a narrated screen recording, or capture a browser workflow semantically and compile it into both a Codex `SKILL.md` and an executable Playwright test.
+Mimex turns a long, narrated screen demonstration into an editable and reusable Codex `SKILL.md`. Record a workflow live or import an existing video, let Mimex recover the intent and procedure, then improve, download, and compose the resulting skills.
 
 **Live product:** [getmimex.com](https://getmimex.com)
 
-## The winning loop
+## The product loop
 
 ```text
-teach → generate → execute with new inputs → verify → repair
+record or import → understand → generate skill → verify → run with Codex
+                                            ↓
+                                   edit → compose → reuse
 ```
 
-The **Teach Lab** demonstrates the complete loop:
-
-1. A human creates customer `Acme` on the `Pro` plan once.
-2. Mimex records semantic actions: roles, labels, stable test IDs, values, and the success assertion.
-3. GPT‑5.6 Sol separates example values from reusable parameters.
-4. Mimex produces a portable Codex skill and a Playwright test.
-5. The generated automation creates `OpenAI` on `Enterprise` and verifies the result.
-6. A simulated UI deployment breaks a selector.
-7. GPT‑5.6 inspects the runtime failure plus the live DOM target inventory, repairs the smallest broken selector, and reruns the workflow successfully.
-
-This proves that Mimex did not memorize click coordinates: it inferred the task, parameterized it, executed it with different data, checked the outcome, and recovered from UI drift.
+Mimex is a learning layer, not a generic workflow builder. Each generated skill remains independently inspectable and runnable. Composition creates a small parent `SKILL.md` that invokes selected child skills in order, so one step can later be replaced without relearning the entire workflow.
 
 ## Judge quickstart — no rebuild required
 
-Supported browser: current Chrome on desktop.
+Use a current desktop version of Chrome.
 
-1. Open [getmimex.com/login](https://getmimex.com/login).
+1. Open [getmimex.com](https://getmimex.com) and select **Teach a workflow**.
 2. Select **Login with dev account**. No email or payment is required.
-3. From the dashboard, select **Teach live**.
-4. Select **Start teaching**.
-5. Enter `Acme`, choose `Pro`, and select **Create customer**.
-6. Select **Finish teaching & generate**.
-7. Run the generated workflow with the prefilled `OpenAI` / `Enterprise` inputs.
-8. After it passes, select **Simulate UI change**, run it again, then select **Repair with GPT‑5.6 & rerun**.
-9. Download and inspect both the generated **Codex skill** and **Playwright** test.
+3. In the skill library, select **New skill**.
+4. Choose **Record screen live** and narrate a short procedure, or choose **Import existing video**.
+5. Upload the recording and watch its pending state while Mimex processes it.
+6. Download the generated `SKILL.md`, or select **Update with AI** to request a focused change.
+7. Once the library contains two skills, select **Compose skills**, choose their order, and generate a readable parent skill.
 
-The dev workspace is intentionally shared, so judges can also inspect previously generated examples after signing in again.
+The dev workspace is intentionally shared, so judges can inspect previously generated examples after signing in again.
 
-## Two learning modes
-
-### 1. Semantic Teach Lab
-
-- Captures DOM-aware browser actions instead of screen coordinates.
-- Generalizes demonstrated values into explicit parameters.
-- Generates a standards-compatible `SKILL.md` with inputs, steps, verification, and gotchas.
-- Generates runnable `@playwright/test` TypeScript using stable selectors and assertions.
-- Replays with new values in a visible execution trace.
-- Detects selector drift and repairs from runtime evidence.
-
-### 2. Narrated screen recording
+## Recording pipeline
 
 ```text
-browser MediaRecorder upload
+browser MediaRecorder or video import
+  ├─ streamed upload to disk, up to 500 MB
   ├─ ffmpeg → mono 64 kbps audio → Whisper transcript
   ├─ ffmpeg → scene-change frames + static-screen fallback
-  └─ transcript + frames → GPT‑5.6 Luna → SKILL.md
+  └─ transcript + frames → GPT‑5.6 Luna → structured SKILL.md
 ```
 
-Recordings are streamed to disk up to 500 MB. The in-process PostgreSQL worker claims pending jobs durably, cleans media after processing, and persists only the generated skill.
+The generated skill contains explicit prerequisites, reusable inputs, grounded steps, verification, and gotchas. The PostgreSQL worker claims pending jobs durably, and uploaded media is deleted after processing.
 
-## OpenAI usage
+## Skill composition
 
-- **GPT‑5.6 Sol + Responses API structured outputs:** workflow generalization, Codex skill authoring, Playwright generation, and evidence-based repair.
-- **GPT‑5.6 Luna + vision:** efficient transcript-and-frame synthesis for uploaded recordings.
-- **Whisper:** speech-to-text for narrated demonstrations.
-- **Codex:** implemented and iterated the product, production backend, strict TypeScript UI, deployment system, and live verification loop with the founder.
+Composition deliberately stays simple:
 
-Model output is constrained by strict JSON schemas. Demonstrations, page content, current skills, and DOM diagnostics are explicitly treated as untrusted data rather than model instructions.
+```text
+[find relevant profiles]
+          ↓
+[prepare personalized outreach]
+          ↓
+[review before sending]
+```
+
+- Choose two to eight existing skills.
+- Put them in execution order.
+- Optionally describe the parent workflow's goal.
+- GPT‑5.6 Sol generates a parent skill that explicitly invokes every child with `$child-skill-name`.
+- Child skills remain independently editable, downloadable, and replaceable.
+
+There are no conditions, loops, connector catalog, or visual automation canvas. Mimex composes learned knowledge instead of cloning n8n.
+
+## How OpenAI is used
+
+- **GPT‑5.6 Luna + vision:** synthesizes the transcript and sampled video frames into a grounded Codex skill, and applies requested edits to existing skills.
+- **GPT‑5.6 Sol + Responses API structured outputs:** creates the composition layer between multiple existing skills while preserving their order and boundaries.
+- **Whisper:** transcribes the user's spoken explanation.
+- **Codex skills:** the portable output format. A skill packages focused instructions and can reference scripts or other resources; composed Mimex skills invoke focused child skills explicitly.
+- **Codex:** collaborated on the production implementation, strict TypeScript UI, backend, deployment, live diagnostics, and product iteration described below.
+
+Model outputs use strict JSON schemas. Transcripts, screenshots, current skills, and user instructions are treated as untrusted source material rather than model instructions.
 
 ## Architecture
 
@@ -82,23 +83,23 @@ Model output is constrained by strict JSON schemas. Demonstrations, page content
 - GitHub Actions → blue/green Docker releases on a Hetzner VPS
 - Traefik TLS at `getmimex.com`
 
-Production has no local-runtime deployment step: every push to `main` is built in GitHub Actions, copied to the VPS, migrated with `prisma migrate deploy`, health-checked, and switched to the new release slot.
+Production has no local application runtime. Every push to `main` is built by GitHub Actions, copied to the VPS, migrated with `prisma migrate deploy`, health-checked, and switched to the new release slot.
 
 ## How Codex and Benjamin collaborated
 
-Codex was used throughout the core build, not only for autocomplete:
+Codex was used across the core product rather than only for autocomplete:
 
 - porting the video pipeline from serverless functions to a durable VPS worker;
 - designing PostgreSQL-backed run ownership and recovery;
-- implementing streamed browser recording uploads and media validation;
+- implementing streamed browser uploads, media validation, live recording, and video import;
 - building Better Auth, Resend, Stripe, and the production deployment workflow;
 - diagnosing live VPS runs, ffmpeg streams, OpenAI calls, and deployment failures;
-- turning the product strategy into the semantic teach/execute/verify/repair loop;
-- generating strict implementations, then compiling and testing them against the live deployment.
+- iterating the product from a broad automation concept toward the focused record → understand → generate → compose loop;
+- compiling, linting, deploying, and verifying each production iteration.
 
-Benjamin made the key product choices: keep the existing design language, deploy directly to production for the hackathon, use a frictionless dev account for judges, preserve the original recording experience, and focus the final demo on a complete learning loop instead of a broad SaaS surface.
+Benjamin made the key product decisions: preserve the existing visual language, deploy directly to production for the hackathon, provide a frictionless dev account for judges, keep skills transparent and portable, and make video-based workflow learning the center of Mimex.
 
-## Build verification
+## Setup and build verification
 
 Requirements: Node 22, pnpm 11, and system ffmpeg.
 
@@ -108,12 +109,14 @@ pnpm build
 pnpm lint
 ```
 
-Runtime environment variables are documented in `server/.env.example`. Real credentials are stored only in GitHub Actions secrets and `/home/ubuntu/envs/mimex.env` on the VPS.
+Runtime variables are documented in `server/.env.example`. Never commit real credentials. Production credentials live only in GitHub Actions secrets and `/home/ubuntu/envs/mimex.env` on the VPS.
+
+For development-only Prisma migration generation, use Homebrew PostgreSQL 16 on `localhost` with the scratch database `mimex_scratch`. Never point local tooling at the VPS database. The Mimex server itself is deployed and run only through the GitHub Actions production workflow.
 
 ## Repository map
 
-- `src/` — landing, authentication, dashboard, recording, billing, and Teach Lab
-- `server/` — Hono APIs, authentication, billing, uploads, worker, workflow compiler, and repair loop
+- `src/` — landing, authentication, skill library, recording/import, composition, and billing
+- `server/` — Hono APIs, authentication, billing, uploads, worker, refinement, and skill composition
 - `prisma/` — PostgreSQL schema and migrations
 - `.github/` — production build and blue/green VPS deployment
 - `netlify/` — preserved legacy hackathon provider implementation
