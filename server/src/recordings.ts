@@ -2,7 +2,7 @@ import Busboy from "busboy"
 import { createHash, randomUUID } from "node:crypto"
 import { createWriteStream } from "node:fs"
 import { mkdir, rename, rm } from "node:fs/promises"
-import { basename, join } from "node:path"
+import { basename, extname, join } from "node:path"
 import { Readable } from "node:stream"
 import { pipeline } from "node:stream/promises"
 import type { Hono } from "hono"
@@ -31,7 +31,20 @@ type StoredRecording = {
 function extensionForMimeType(mimeType: string): string {
   if (mimeType === "video/mp4") return ".mp4"
   if (mimeType === "video/quicktime") return ".mov"
+  if (mimeType === "video/x-matroska") return ".mkv"
   return ".webm"
+}
+
+function normalizedVideoMimeType(mimeType: string, filename: string): string | null {
+  const baseMimeType = mimeType.toLowerCase().split(";", 1)[0]
+  if (baseMimeType?.startsWith("video/")) return baseMimeType
+
+  const extension = extname(filename).toLowerCase()
+  if (extension === ".webm") return "video/webm"
+  if (extension === ".mp4" || extension === ".m4v") return "video/mp4"
+  if (extension === ".mov") return "video/quicktime"
+  if (extension === ".mkv") return "video/x-matroska"
+  return null
 }
 
 async function storeRecording(request: Request): Promise<StoredRecording> {
@@ -96,7 +109,9 @@ async function storeRecording(request: Request): Promise<StoredRecording> {
     await fileWrite
     if (!fileSeen || !fileWrite) throw new UploadError(422, "A recording file is required.")
     if (fileTooLarge) throw new UploadError(413, "Recording exceeds the 500 MB limit.")
-    if (!mimeType.startsWith("video/")) throw new UploadError(415, "The uploaded file must be a video.")
+    const videoMimeType = normalizedVideoMimeType(mimeType, filename)
+    if (!videoMimeType) throw new UploadError(415, "The uploaded file must be a video.")
+    mimeType = videoMimeType
 
     const finalPath = join(dataDir, `${uploadId}${extensionForMimeType(mimeType)}`)
     await rename(temporaryPath, finalPath)
