@@ -3,6 +3,7 @@ import { Hono } from "hono"
 import { auth } from "./auth.js"
 import { registerBillingRoutes } from "./billing.js"
 import { registerRecordingRoutes } from "./recordings.js"
+import { registerTeachRoutes } from "./teach.js"
 
 export function createApp(): Hono {
   const app = new Hono()
@@ -25,6 +26,7 @@ export function createApp(): Hono {
   })
 
   registerRecordingRoutes(app)
+  registerTeachRoutes(app)
   registerBillingRoutes(app)
 
   app.use("/*", serveStatic({ root: "./dist" }))
