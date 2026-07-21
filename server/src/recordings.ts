@@ -161,9 +161,6 @@ function runResponse(run: {
     updatedAt: run.updatedAt.toISOString(),
     completedAt: run.completedAt?.toISOString() ?? null,
     downloadUrl: run.status === "succeeded" ? `/api/runs/${run.id}/skill.md` : null,
-    automationUrl: run.status === "succeeded" && typeof output?.playwright_ts === "string"
-      ? `/api/runs/${run.id}/playwright.ts`
-      : null,
   }
 }
 
@@ -268,26 +265,6 @@ export function registerRecordingRoutes(app: Hono): void {
     context.header("Content-Type", "text/markdown; charset=utf-8")
     context.header("Content-Disposition", `attachment; filename="${safeName || "mimex-skill"}.md"`)
     return context.body(skill)
-  })
-
-  app.get("/api/runs/:id/playwright.ts", async (context) => {
-    const session = await auth.api.getSession({ headers: context.req.raw.headers })
-    if (!session) return context.json({ error: "unauthorized" }, 401)
-
-    const access = await runAccessWhere(session.user.id)
-    const run = await db.run.findFirst({
-      where: { id: context.req.param("id"), status: "succeeded", ...access },
-      select: { output: true },
-    })
-    const output = jsonObject(run?.output)
-    const script = output?.playwright_ts
-    if (!run || typeof script !== "string") return context.json({ error: "automation_not_ready" }, 404)
-
-    const rawName = typeof output?.skill_name === "string" ? output.skill_name : "mimex-workflow"
-    const safeName = rawName.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "")
-    context.header("Content-Type", "text/typescript; charset=utf-8")
-    context.header("Content-Disposition", `attachment; filename="${safeName || "mimex-workflow"}.spec.ts"`)
-    return context.body(script)
   })
 
   app.post("/api/runs/:id/refine", async (context) => {

@@ -94,8 +94,8 @@ function Hero() {
           variants={fadeUp}
           className="mt-6 max-w-xl text-balance text-lg text-muted-foreground"
         >
-          Mimex turns demonstrated workflows into executable Codex skills that
-          generalize new inputs, verify their own result, and repair when the UI changes.
+          Record or import a narrated workflow. Mimex understands the screen and your voice,
+          then turns the demonstration into an editable, reusable Codex skill.
         </motion.p>
         <motion.div
           initial="hidden"
@@ -105,7 +105,7 @@ function Hero() {
           className="mt-10 flex flex-wrap items-center justify-center gap-3"
         >
           <Button size="lg" className="font-mono text-xs uppercase tracking-widest" asChild>
-            <a href="/login?next=/teach">Teach a workflow</a>
+            <a href="/dashboard">Teach a workflow</a>
           </Button>
           <Button size="lg" variant="outline" className="font-mono text-xs uppercase tracking-widest" asChild>
             <a href="#how">See how it works</a>
@@ -136,15 +136,14 @@ function Hero() {
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </motion.div>
-              <p className="font-mono text-xs text-muted-foreground">Acme · Pro · demonstrated once</p>
+              <p className="font-mono text-xs text-muted-foreground">Screen + voice · one demonstration</p>
             </div>
             <div className="p-6 font-mono text-xs leading-relaxed text-muted-foreground">
-              <p className="text-foreground"># create-customer.skill</p>
-              <p className="mt-2">inputs: name, plan</p>
-              <p>run: OpenAI · Enterprise</p>
-              <p className="mt-2 text-foreground">✓ execution passed</p>
-              <p>selector drift detected</p>
-              <p className="text-emerald-300">✓ repaired and verified</p>
+              <p className="text-foreground"># learned-workflow/SKILL.md</p>
+              <p className="mt-2">✓ intent extracted</p>
+              <p>✓ reusable inputs identified</p>
+              <p>✓ steps grounded in the video</p>
+              <p className="text-emerald-300">✓ verification included</p>
             </div>
           </div>
         </motion.div>
@@ -155,16 +154,16 @@ function Hero() {
 
 const steps = [
   {
-    title: "Teach it once",
-    body: "Demonstrate a browser workflow semantically, or narrate a screen recording. Mimex captures the goal, actions, inputs, and success signal.",
+    title: "Record or import",
+    body: "Share your screen and explain the workflow out loud, or upload an existing instructional video.",
   },
   {
-    title: "GPT‑5.6 generalizes",
-    body: "Example values become reusable parameters. Mimex generates a portable Codex SKILL.md, an executable Playwright test, and explicit assertions.",
+    title: "Mimex understands",
+    body: "Speech, scene changes, and visible context become a structured procedure with reusable inputs and checks.",
   },
   {
-    title: "Execute, verify, repair",
-    body: "Replay immediately with different data. If the UI drifts, Mimex inspects the failure, repairs the smallest broken selector, and reruns the test.",
+    title: "Improve and compose",
+    body: "Edit the generated SKILL.md with AI, run it with Codex, or combine focused skills into a larger workflow.",
   },
 ]
 
@@ -180,7 +179,7 @@ function HowItWorks() {
         >
           <Tag>How it works</Tag>
           <h2 className="mt-6 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            Teach. Execute. Verify. Repair.
+            Record. Understand. Generate. Reuse.
           </h2>
         </motion.div>
         <div className="mt-12 grid gap-px border bg-border sm:grid-cols-3">
@@ -207,20 +206,20 @@ function HowItWorks() {
 
 const features = [
   {
-    title: "Executable, not documentation",
-    body: "Every semantic demonstration produces both a standard Codex SKILL.md and a runnable Playwright test with assertions.",
+    title: "Learns from demonstrations",
+    body: "Show the real workflow instead of spending hours translating tacit knowledge into agent instructions by hand.",
   },
   {
-    title: "Understands what varies",
-    body: "GPT‑5.6 separates example data from intent, turning Acme / Pro into reusable name and plan parameters.",
+    title: "Sees and hears the context",
+    body: "Mimex combines narration, screenshots, and scene changes to recover both what happened and why it matters.",
   },
   {
-    title: "Visible proof of execution",
-    body: "Run the skill immediately with new inputs and watch every semantic action and verification result in real time.",
+    title: "Editable and auditable",
+    body: "Every workflow stays inspectable as a portable SKILL.md that you can download, refine, and own.",
   },
   {
-    title: "Evidence-based self-repair",
-    body: "When a selector fails, Mimex compares the error with the live DOM, patches only the broken target, and verifies the repair.",
+    title: "Compose learned workflows",
+    body: "Chain focused skills in a simple order while keeping every child independently runnable and replaceable.",
   },
 ]
 
@@ -237,7 +236,7 @@ function Features() {
         >
           <Tag>Why Mimex</Tag>
           <h2 className="mt-6 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            A self-learning tool layer for Codex.
+            Teach Codex how you work.
           </h2>
         </motion.div>
         <div className="mt-12 grid gap-px border bg-border sm:grid-cols-2">
@@ -280,13 +279,13 @@ function StartCallout() {
               One workspace for every workflow
             </p>
             <h2 className="mx-auto mt-4 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              Give Codex workflows it can run — and keep running
+              Record complex work once. Reuse the knowledge.
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-              Teach once, replay with new inputs, verify the outcome, and repair UI drift without rewriting the automation.
+              Build a library of transparent skills, improve them over time, and compose them into larger workflows without a generic automation canvas.
             </p>
             <Button size="lg" className="mt-8 font-mono text-xs uppercase tracking-widest" asChild>
-              <a href="/login?next=/teach">Open the Teach Lab</a>
+              <a href="/dashboard">Open your skill library</a>
             </Button>
           </div>
         </motion.div>
@@ -344,7 +343,11 @@ const faqs = [
   },
   {
     q: "What exactly do I get back?",
-    a: "A SKILL.md file — name, description, and step-by-step instructions with the commands, paths, and caveats extracted from the video. It follows the emerging agent-skills convention, so it works with Claude Code, Codex, and other skill-aware agents.",
+    a: "A portable SKILL.md with prerequisites, reusable inputs, grounded steps, verification, and gotchas extracted from the video. You can inspect it, update it with AI, download it, and use it with Codex.",
+  },
+  {
+    q: "Can I combine several skills?",
+    a: "Yes. Choose two to eight skills and put them in order. Mimex creates a readable parent skill that invokes each child explicitly, while every child remains independently editable and reusable.",
   },
   {
     q: "How does payment work?",
@@ -391,7 +394,7 @@ function Pricing() {
               "Screen + microphone recording",
               "Transcript and visual analysis",
               "Agent-ready SKILL.md output",
-              "Private skill dashboard",
+              "Skill library and composition",
             ].map((feature) => (
               <div key={feature} className="flex items-start gap-3 bg-background p-6 text-sm">
                 <span className="mt-1 font-mono text-[10px]">■</span>{feature}

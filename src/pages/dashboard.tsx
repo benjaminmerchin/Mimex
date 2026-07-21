@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Braces, CircleCheck, CircleX, Clock3, CreditCard, Download, FlaskConical, LogOut, Sparkles, Video, X } from "lucide-react"
+import { CircleCheck, CircleX, Clock3, CreditCard, Download, GitMerge, LogOut, Plus, Sparkles, X } from "lucide-react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 
@@ -19,7 +19,6 @@ type RunSummary = {
   error: string | null
   createdAt: string
   downloadUrl: string | null
-  automationUrl: string | null
 }
 
 export function DashboardPage() {
@@ -129,17 +128,20 @@ export function DashboardPage() {
         <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Your skills</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Record a workflow and turn it into an agent-ready skill.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Create, improve, download, and combine the workflows you have taught Mimex.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild><Link to="/teach"><FlaskConical className="size-4" /> Teach live</Link></Button>
-            <Button asChild><Link to="/record"><Video className="size-4" /> New recording</Link></Button>
+            <Button variant="outline" asChild><Link to="/compose"><GitMerge className="size-4" /> Compose skills</Link></Button>
+            <Button asChild><Link to="/record"><Plus className="size-4" /> New skill</Link></Button>
           </div>
         </div>
         {loadingRuns ? (
           <div className="mt-10 border border-dashed px-6 py-16 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">Loading runs…</div>
         ) : runs.length === 0 ? (
-          <div className="mt-10 border border-dashed px-6 py-16 text-center text-sm text-muted-foreground">Your generated skills will appear here.</div>
+          <div className="mt-10 border border-dashed px-6 py-16 text-center text-sm text-muted-foreground">
+            <p>Your generated skills will appear here.</p>
+            <Button className="mt-5" asChild><Link to="/record"><Plus className="size-4" /> Create your first skill</Link></Button>
+          </div>
         ) : (
           <div className="mt-10 border">
             {runs.map((run) => (
@@ -170,11 +172,6 @@ export function DashboardPage() {
                       <Button variant="outline" asChild>
                         <a href={run.downloadUrl}><Download className="size-4" /> Download .md</a>
                       </Button>
-                      {run.automationUrl && (
-                        <Button variant="outline" asChild>
-                          <a href={run.automationUrl}><Braces className="size-4" /> Playwright</a>
-                        </Button>
-                      )}
                     </div>
                   )}
                 </div>
